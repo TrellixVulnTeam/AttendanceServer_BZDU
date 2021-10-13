@@ -1,10 +1,6 @@
 import base64
 import os
 import threading
-from os import curdir, sep
-from pyexpat.errors import messages
-
-from PIL import Image
 from django.http import Http404, HttpResponse
 from django.shortcuts import render
 from rest_framework.views import APIView
@@ -60,7 +56,7 @@ class register(APIView):
         # notification for client
         response_True = {
             "ok": True,
-            "massage": "Thành công"
+            "massage": "Đăng kí tài khoản thành công vui lòng kiểm tra email"
         }
         response_False = {
             "ok": False,
@@ -110,6 +106,17 @@ class register(APIView):
 
 
 # login
+
+class myThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+    def run(self):
+        print("sẳn sàn chạy threading")
+        tmp = threading.Thread(target=server, args=())
+        tmp.setDaemon(True)
+        tmp.start()
+
+
 class login(APIView):
     def post(self, request):
         # notification for client
@@ -139,9 +146,17 @@ class login(APIView):
         }
         # start socket server
         if(user.user_type=="lecturer"):
-            tmp = threading.Thread(target=server, args=())
-            tmp.setDaemon(True)
-            tmp.start()
+            # try:
+            #     threadingsocketServer=myThread()
+            #     threadingsocketServer.start()
+            # except  Exception as e:
+            #     print("Exception:"+e)
+            try:
+                tmp = threading.Thread(target=server, args=())
+                tmp.setDaemon(True)
+                tmp.start()
+            except Exception as e:
+                print("Exception"+e)
 
         return Response(response_True, status=status.HTTP_200_OK)
 

@@ -283,11 +283,12 @@ def edit_course_save(request):
             course.save()
 
             messages.success(request, "Course Updated Successfully.")
-            return redirect('/edit_course/' + course_id)
+            # return redirect('/edit_course/' + course_id+"/")
+            return HttpResponseRedirect(reverse("edit_course", kwargs={"course_id": course_id}))
 
         except:
             messages.error(request, "Failed to Update Course.")
-            return redirect('/edit_course/' + course_id)
+            return HttpResponseRedirect(reverse("edit_course", kwargs={"course_id": course_id}))
 
 
 def delete_course(request, course_id):

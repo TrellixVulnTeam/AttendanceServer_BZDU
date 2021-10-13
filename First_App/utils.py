@@ -11,16 +11,16 @@ import datetime
 import os
 
 import pygame as pygame
+from face_recognition import face_recognition
 from .models import Course, Lesson, Attendance, User
 
 # from manage import sk
+
 width = 320
 height = 240
 
-local_ip = "0.0.0.0"
+local_ip = "192.168.1.5"
 local_port = 3456
-
-
 
 ip_port = (local_ip, local_port)
 sk = socket.socket()
@@ -30,18 +30,37 @@ sk.listen(50)
 dict = {}
 print("accept now,wait for client")
 
+
 # jpeg 20 fpsls
 
 # esp32 spi dma temp buffer MAX Len: 4k
+#
+# class myThread(threading.Thread):
+#     def __init__(self,usercode,date,url):
+#         threading.Thread.__init__(self)
+#
+#     def run(self):
+#         conn, addr = sk.accept()
+#         print("hello client, ip:")
+#         print(addr)
+#         receiveThread(conn,addr)
+#         t = threading.Thread(target=receiveThread, args=(conn, addr,))
+#         t.setDaemon(True)
+#         t.start()
 
 def server():
     while True:
+        # threadingsocketServer = myThread()
+        # threadingsocketServer.start()
+        #
         conn, addr = sk.accept()
         print("hello client, ip:")
         print(addr)
         t = threading.Thread(target=receiveThread, args=(conn, addr,))
         t.setDaemon(True)
         t.start()
+
+
 def receive_data(conn, lenght):
     result = b''
     while lenght != len(result):
@@ -63,9 +82,9 @@ def get_dir(ID):
 
 
 def receiveThread(conn, addr):
-    conn.settimeout(200)
+    # conn.settimeout(200)
     conn_end = False
-    pack_size = 1024*5
+    pack_size = 1024 * 5
 
     while True:
         if conn_end:
@@ -125,7 +144,7 @@ def receiveThread(conn, addr):
                     conn.close()
                     try:
                         print(b'DK' + size + ID)
-                        con.send(b'DK' +  ID)
+                        con.send(b'DK' + ID)
                     except Exception as e:
                         conn.close()
                         print(e)
@@ -134,14 +153,14 @@ def receiveThread(conn, addr):
                     print("Token not exist")
                     conn.send(b"Device haven't connected to server")
                 return
-            elif data==b'DE':
-                token=receive_data(conn,10).decode()
+            elif data == b'DE':
+                token = receive_data(conn, 10).decode()
                 dict.pop(token, 1)
                 conn.close()
                 print("Disconnected")
                 return
-            elif data==b'EN':
-                token=receive_data(conn,10).decode()
+            elif data == b'EN':
+                token = receive_data(conn, 10).decode()
                 con = dict.get(token)
                 conn.send(b'ACK')
                 if con:
@@ -157,34 +176,66 @@ def receiveThread(conn, addr):
                 return
 
             elif data == b'ID':
-                print(data)
+                # print(data)
                 size_ID = int(receive_data(conn, 2).decode())
                 ID = receive_data(conn, size_ID).decode()
                 size_img = int(receive_data(conn, 4).decode())
 
                 img = receive_data(conn, size_img)
-                print(img)
+                # print(img)
                 if not img.startswith(b'\xFF\xD8') or not img.endswith(b'\xFF\xD9'):
                     print("image error")
                     conn_end = True
                     return
                     continue
-                print("len receive: ", len(img))
+                # print("len receive: ", len(img))
                 now = datetime.datetime.now()
-                imagename=str(now.microsecond)
+                imagename = str(now.microsecond)
                 # create url to save image
                 dir = get_dir(ID)
                 # url to save image for attendance
-                urlimage="/media/"+ID[:2]+"/"+ID[0:]+"/"+str(now.year)+"/"+str(now.month)+"/"+str(now.day)+"/"+imagename+".jpg"
-                # create a attendance in database
+                urlimage = "/media/" + ID[:2] + "/" + ID[0:] + "/" + str(now.year) + "/" + str(now.month) + "/" + str(
+                    now.day) + "/" + imagename + ".jpg"
+
+                # save image to file
+                f = open(dir + '\\' + imagename + ".jpg", "wb")
+                f.write(img)
+                f.close()
+
+                # compare face student from device with image in db
+                # try:
+                #     thread_face_recognition=myThread(ID[0:],datetime.date.today(),urlimage)
+                #     thread_face_recognition.start()
+                # except:
+                #     print("Lỗi thực hiện đa luồng face recognition")
+
+                user = User.objects.filter(courses__code=ID[0:])
+                print(user)
+
+                for it in user:
+
+                    urlknow = it.url_avatar
+                    urlunknown = urlimage
+                    known_image = face_recognition.load_image_file(urlknow[1:])
+                    unknown_image = face_recognition.load_image_file(urlunknown[1:])
+
+                    known_encoding = face_recognition.face_encodings(known_image)[0]
+                    unknown_encoding = face_recognition.face_encodings(unknown_image)[0]
+                    results = face_recognition.compare_faces([known_encoding], unknown_encoding)
+                    print("len receive: ", results[0])
+                    if (results[0] == True):
+                        Attendance.objects.create(code_course=ID[0:],
+                                                  code_student=it.user_name,
+                                                  date=datetime.date.today(),
+                                                  url_image=urlimage,
+                                                  check_inf=True)
+                        print("len receive: ", it.user_name)
+                        return
+
                 Attendance.objects.create(code_course=ID[0:],
                                           code_student=imagename,
                                           date=datetime.date.today(),
                                           url_image=urlimage)
-                # save image to file
-                f = open(dir+'\\' + imagename+".jpg", "wb")
-                f.write(img)
-                f.close()
                 try:
                     surface = pygame.image.load(dir).convert()
                     screen.blit(surface, (0, 0))
@@ -194,7 +245,6 @@ def receiveThread(conn, addr):
                     print(e)
     conn.close()
     print("receive thread end")
-
 
 
 # print("createsocket")
@@ -211,7 +261,6 @@ def receiveThread(conn, addr):
 #             exit()
 
 def create_socket():
-
     print("createsocket")
     tmp = threading.Thread(target=server, args=())
     tmp.setDaemon(True)
@@ -224,8 +273,3 @@ def create_socket():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
-
-
-
-
-
