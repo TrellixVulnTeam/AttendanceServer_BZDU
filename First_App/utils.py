@@ -12,6 +12,7 @@ import os
 
 import pygame as pygame
 from face_recognition import face_recognition
+from face_recognition.face_recognition import api
 from .models import Course, Lesson, Attendance, User
 
 # from manage import sk
@@ -35,18 +36,34 @@ print("accept now,wait for client")
 
 # esp32 spi dma temp buffer MAX Len: 4k
 #
-# class myThread(threading.Thread):
-#     def __init__(self,usercode,date,url):
-#         threading.Thread.__init__(self)
-#
-#     def run(self):
-#         conn, addr = sk.accept()
-#         print("hello client, ip:")
-#         print(addr)
-#         receiveThread(conn,addr)
-#         t = threading.Thread(target=receiveThread, args=(conn, addr,))
-#         t.setDaemon(True)
-#         t.start()
+class myThread(threading.Thread):
+    def __init__(self,usercode,date,url,position):
+        threading.Thread.__init__(self)
+        self.usercode=usercode
+        self.date=date
+        self.url=url
+        self.pos=position
+
+    def run(self):
+        user = User.objects.filter(courses__code=self.usercode)
+        print(user)
+        face_to_compare = []
+        for it in user:
+
+            urlknow = it.url_avatar
+            urlunknown = self.url
+            try:
+                known_image = api.load_image_file(urlknow[1:])
+            except Exception as e:
+                print("Lỗi chỗ đọc ảnh từ file face_recognize_module" + e)
+
+            unknown_image = api.load_image_file(urlunknown[1:])
+
+            known_encoding = api.face_encodings(known_image)[0]
+            unknown_encoding = face_recognition.face_encodings(unknown_image)[0]
+            # face_to_compare.append(known_encoding)
+            results = face_recognition.compare_faces([known_encoding], unknown_encoding)
+            print("len receive: " + str(results[0]) + str(self.pos))
 
 def server():
     while True:
@@ -208,34 +225,59 @@ def receiveThread(conn, addr):
                 #     thread_face_recognition.start()
                 # except:
                 #     print("Lỗi thực hiện đa luồng face recognition")
+                try:
+                    threading_face=myThread(ID[0:],datetime,urlimage,addr)
+                    threading_face.start()
+                except Exception as e:
+                        print("Lỗi chỗ đọc ảnh từ file face_recognize_module"+ e)
+                conn.close()
+                print("receive thread end")
+                # user = User.objects.filter(courses__code=ID[0:])
+                # print(user)
+                # face_to_compare =[]
+                # for it in user:
+                #
+                #     urlknow = it.url_avatar
+                #     urlunknown = urlimage
+                #     try:
+                #         known_image = api.load_image_file(urlknow[1:])
+                #     except Exception as e:
+                #         print("Lỗi chỗ đọc ảnh từ file face_recognize_module"+ e)
+                #
+                #     unknown_image = api.load_image_file(urlunknown[1:])
+                #
+                #     known_encoding = api.face_encodings(known_image)[0]
+                #     unknown_encoding = face_recognition.face_encodings(unknown_image)[0]
+                #     # face_to_compare.append(known_encoding)
+                #     results = face_recognition.compare_faces([known_encoding], unknown_encoding)
+                #     print("len receive: "+ str(results[0]) + str(addr))
+                    # if (results[0] == True):
+                    #     Attendance.objects.create(code_course=ID[0:],
+                    #                               code_student=it.user_name,
+                    #                               date=datetime.date.today(),
+                    #                               url_image=urlimage,
+                    #                               check_inf=True)
+                    #     print("len receive: ", it.user_name)
+                    #     return
+                # urlunknown = urlimage
+                # unknown_image = api.load_image_file(urlunknown[1:])
+                # unknown_encoding = api.face_encodings(unknown_image)[0]
+                # results = api.compare_faces(face_to_compare, unknown_encoding)
+                # print("len receive: ", results)
+                # for it in results:
+                #     if(it==True):
+                #         Attendance.objects.create(code_course=ID[0:],
+                #                                       code_student=it.user_name,
+                #                                       date=datetime.date.today(),
+                #                                       url_image=urlimage,
+                #                                       check_inf=True)
+                #         print("len receive: ", it.user_name)
+                #         return
 
-                user = User.objects.filter(courses__code=ID[0:])
-                print(user)
-
-                for it in user:
-
-                    urlknow = it.url_avatar
-                    urlunknown = urlimage
-                    known_image = face_recognition.load_image_file(urlknow[1:])
-                    unknown_image = face_recognition.load_image_file(urlunknown[1:])
-
-                    known_encoding = face_recognition.face_encodings(known_image)[0]
-                    unknown_encoding = face_recognition.face_encodings(unknown_image)[0]
-                    results = face_recognition.compare_faces([known_encoding], unknown_encoding)
-                    print("len receive: ", results[0])
-                    if (results[0] == True):
-                        Attendance.objects.create(code_course=ID[0:],
-                                                  code_student=it.user_name,
-                                                  date=datetime.date.today(),
-                                                  url_image=urlimage,
-                                                  check_inf=True)
-                        print("len receive: ", it.user_name)
-                        return
-
-                Attendance.objects.create(code_course=ID[0:],
-                                          code_student=imagename,
-                                          date=datetime.date.today(),
-                                          url_image=urlimage)
+                # Attendance.objects.create(code_course=ID[0:],
+                #                           code_student=imagename,
+                #                           date=datetime.date.today(),
+                #                           url_image=urlimage)
                 try:
                     surface = pygame.image.load(dir).convert()
                     screen.blit(surface, (0, 0))
