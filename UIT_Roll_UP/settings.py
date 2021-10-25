@@ -156,3 +156,23 @@ EMAIL_USE_SSL = False
 AUTHENTICATION_BACKENDS = ['First_App.EmailBackEnd.EmailBackEnd',
                            'django.contrib.auth.backends.ModelBackend',
                            ]
+
+#
+LOGGING = {
+'version': 1,
+'disable_existing_loggers': False,
+'handlers': {
+    'file': {
+        'level': 'ERROR',
+        'class': 'logging.FileHandler',
+        'filename': os.path.join(BASE_DIR,'APPNAME.log'),
+    },
+},
+'loggers': {
+    'django': {
+        'handlers': ['file'],
+        'level': 'ERROR',
+        'propagate': True,
+    },
+},
+}

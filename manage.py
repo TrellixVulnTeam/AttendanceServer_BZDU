@@ -17,9 +17,6 @@ import os
 
 
 
-
-
-
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'UIT_Roll_UP.settings')
@@ -32,6 +29,7 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
     execute_from_command_line(sys.argv)
+
 
 
 

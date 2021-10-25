@@ -8,5 +8,12 @@
       <jdbc-url>jdbc:sqlite:D:\KhoaLuan\backend__test\UIT_Roll_UP\db.sqlite3</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="slnx" uuid="c75e3ae2-41e7-45de-b7a1-9538654fe16e">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:D:\KhoaLuan\backend__test\UIT_Roll_UP\.vs\slnx.sqlite</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>
