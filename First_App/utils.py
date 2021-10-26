@@ -9,8 +9,6 @@ import datetime
 
 import datetime
 import os
-
-import pygame as pygame
 from face_recognition import face_recognition
 from .models import Course, Lesson, Attendance, User
 
@@ -19,7 +17,7 @@ from .models import Course, Lesson, Attendance, User
 width = 320
 height = 240
 
-local_ip = "192.168.1.5"
+local_ip = "127.0.0.1"
 local_port = 3456
 
 ip_port = (local_ip, local_port)
